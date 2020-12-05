@@ -99,12 +99,11 @@ object FeatureEngineering {
 
         val conf = new SparkConf()
             .setMaster("local")
-            .setAppName("featureEngineeringOneHot")
+            .setAppName("featureEngineering")
             .set("spark.submit.deployMode", "client")
         val spark = SparkSession.builder.config(conf).getOrCreate()
 
         val movieSamples = spark.read.format(source = "csv").option("header", "true").load("src/main/resources/ml-latest-small/movies.csv")
-        val ratingSamples = spark.read.format(source = "csv").option("header", "true").load("src/main/resources/ml-latest-small/ratings.csv")
 
         println("原始的 movie 样本：")
         movieSamples.printSchema()
@@ -119,6 +118,11 @@ object FeatureEngineering {
         println("Multi-Hot 编码后的 movie 样本：")
         multiHotEncoderSamples.printSchema()
         multiHotEncoderSamples.show(10)
+
+        val ratingSamples = spark.read.format(source = "csv").option("header", "true").load("src/main/resources/ml-latest-small/ratings.csv")
+        println("原始的 rating 样本：")
+        ratingSamples.printSchema()
+        ratingSamples.show(10)
 
         val numericalProcessedSamples = ratingFeatures(ratingSamples)
         println("对评分进行数值型特征处理后的 movie 样本：")
