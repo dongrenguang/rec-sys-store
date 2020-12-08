@@ -21,7 +21,7 @@ object CollaborativeFiltering {
 
         val toInt = udf[Int, String](_.toInt)
         val toFloat = udf[Double, String](_.toFloat)
-        val ratingSamples = spark.read.format(source = "csv").option("header", "true").load("src/main/resources/ml-latest-small/ratings_old.csv")
+        val ratingSamples = spark.read.format(source = "csv").option("header", "true").load("src/main/resources/ml-latest-small/ratings.csv")
             .withColumn("userIdInt", toInt(col("userId")))
             .withColumn("movieIdInt", toInt(col("movieId")))
             .withColumn("ratingFloat", toFloat(col("rating")))
