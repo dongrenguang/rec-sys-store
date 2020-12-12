@@ -7,6 +7,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+import java.net.URL
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
@@ -26,7 +27,10 @@ object FeatureEngForRecModel {
 
         // 添加电影发布年份
         val extractReleaseYearUdf = udf({(title: String) => {
-           if (null == title || title.trim.length < 6) {
+           if (null == title || title.trim.length < 6
+               || title.trim.substring(title.length - 5, title.length - 4) != "("
+               || title.trim.substring(title.length - 2, title.length - 1) != ")"
+           ) {
                1990
            }
            else {
@@ -166,6 +170,20 @@ object FeatureEngForRecModel {
     }
 
 
+    /**
+     * 切分训练集和测试机
+     * @param samples
+     * @param sampleResourcesPath
+     */
+    def splitAndSaveTrainingTestSamples(samples: DataFrame, sampleResourcesPath: URL): Unit = {
+        val Array(training, test) = samples.randomSplit(Array(0.8, 0.2))
+        training.coalesce(1).write.option("header", "true").mode("overwrite")
+            .csv(sampleResourcesPath + "/trainingSamples")
+        test.coalesce(1).write.option("header", "true").mode("overwrite")
+            .csv(sampleResourcesPath + "/testSamples")
+    }
+
+
     def main(args: Array[String]): Unit = {
         Logger.getLogger("org").setLevel(Level.ERROR)
 
@@ -175,12 +193,14 @@ object FeatureEngForRecModel {
             .set("spark.submit.deployMode", "client")
         val spark = SparkSession.builder.config(conf).getOrCreate()
 
-        val movieSamples = spark.read.format(source = "csv").option("header", "true").load("src/main/resources/ml-latest-small/movies_old.csv")
+        val movieResourcesPath = this.getClass.getResource("/webroot/ml-latest-small/movies.csv")
+        val movieSamples = spark.read.format(source = "csv").option("header", "true").load(movieResourcesPath.getPath)
         println("原始的 movie 样本：")
         movieSamples.printSchema()
         movieSamples.show(10)
 
-        val ratingSamples = spark.read.format(source = "csv").option("header", "true").load("src/main/resources/ml-latest-small/ratings_old.csv")
+        val ratingsResourcesPath = this.getClass.getResource("/webroot/ml-latest-small/ratings.csv")
+        val ratingSamples = spark.read.format(source = "csv").option("header", "true").load(ratingsResourcesPath.getPath)
         println("原始的 rating 样本：")
         ratingSamples.printSchema()
         ratingSamples.show(10)
@@ -191,7 +211,12 @@ object FeatureEngForRecModel {
         val samplesWithMovieFeatures = addMovieFeatures(movieSamples, ratingSamplesWithLabel)
         val samplesWithUserFeatures = addUserFeatures(samplesWithMovieFeatures)
 
-        extractMovieFeatures(samplesWithUserFeatures)
-        extractUserFeatures(samplesWithUserFeatures)
+        val sampleResourcesPath = this.getClass.getResource("/webroot/ml-latest-small")
+        samplesWithUserFeatures.coalesce(1).write.option("header", "true").mode("overwrite")
+            .csv(sampleResourcesPath + "/modelSamples")
+        splitAndSaveTrainingTestSamples(samplesWithUserFeatures, sampleResourcesPath)
+
+        val movieFeatures = extractMovieFeatures(samplesWithUserFeatures)
+        val userFeatures = extractUserFeatures(samplesWithUserFeatures)
     }
 }

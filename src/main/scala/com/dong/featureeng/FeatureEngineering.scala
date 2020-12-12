@@ -103,7 +103,8 @@ object FeatureEngineering {
             .set("spark.submit.deployMode", "client")
         val spark = SparkSession.builder.config(conf).getOrCreate()
 
-        val movieSamples = spark.read.format(source = "csv").option("header", "true").load("src/main/resources/ml-latest-small/movies.csv")
+        val movieResourcesPath = this.getClass.getResource("/webroot/ml-latest-small/movies.csv")
+        val movieSamples = spark.read.format(source = "csv").option("header", "true").load(movieResourcesPath.getPath)
 
         println("原始的 movie 样本：")
         movieSamples.printSchema()
@@ -119,7 +120,8 @@ object FeatureEngineering {
         multiHotEncoderSamples.printSchema()
         multiHotEncoderSamples.show(10)
 
-        val ratingSamples = spark.read.format(source = "csv").option("header", "true").load("src/main/resources/ml-latest-small/ratings.csv")
+        val ratingsResourcesPath = this.getClass.getResource("/webroot/ml-latest-small/ratings.csv")
+        val ratingSamples = spark.read.format(source = "csv").option("header", "true").load(ratingsResourcesPath.getPath)
         println("原始的 rating 样本：")
         ratingSamples.printSchema()
         ratingSamples.show(10)
