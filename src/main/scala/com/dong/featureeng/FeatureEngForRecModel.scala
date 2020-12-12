@@ -28,8 +28,8 @@ object FeatureEngForRecModel {
         // 添加电影发布年份
         val extractReleaseYearUdf = udf({(title: String) => {
            if (null == title || title.trim.length < 6
-               || title.trim.substring(title.length - 5, title.length - 4) != "("
-               || title.trim.substring(title.length - 2, title.length - 1) != ")"
+               || title.trim.substring(title.length - 6, title.length - 5) != "("
+               || title.trim.substring(title.length - 1, title.length) != ")"
            ) {
                1990
            }
