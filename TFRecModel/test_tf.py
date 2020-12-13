@@ -4,7 +4,7 @@
 import tensorflow as tf
 
 import os
-os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+os.environ['KMP_DUPLICATE_LIB_OK']='TRUE'
 
 #载入MINST数据集
 mnist = tf.keras.datasets.mnist
